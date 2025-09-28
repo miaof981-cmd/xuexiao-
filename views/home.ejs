@@ -6,10 +6,7 @@
   <title>学校官网</title>
   <link rel="stylesheet" href="/styles.css" />
   <style>
-    .container { max-width: 960px; margin: 0 auto; padding: 16px; }
     header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-    .card { border: 1px solid #ddd; border-radius: 8px; padding: 12px; margin-bottom: 12px; background: #fff; }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     .pinned { color: #b30000; font-weight: bold; }
     form { display: grid; gap: 8px; }
     input, textarea, select, button { padding: 8px; font-size: 14px; }
@@ -28,76 +25,70 @@
       <% } %>
     </header>
 
-    <div class="card" style="padding:0; overflow:hidden; margin-bottom:16px">
+    <div class="doc-card" style="padding:0; overflow:hidden; margin-bottom:16px">
       <img src="/banners/blue-graduation-hero.svg" alt="欢迎横幅" style="display:block; width:100%; height:auto" />
     </div>
-
-    <div class="grid">
-      <section>
-        <div class="card">
-          <h2>公告栏</h2>
-          <% if (announcements && announcements.length) { %>
-            <% announcements.forEach(a => { %>
-              <div class="card">
-                <h3><%= a.title %> <% if (a.pinned) { %><span class="pinned">[置顶]</span><% } %></h3>
+    <div class="masonry">
+      <% if (announcements && announcements.length) { %>
+        <% announcements.forEach(a => { %>
+          <div class="masonry-item">
+            <div class="doc-card">
+              <div class="doc-header">
+                <div class="doc-title">公告</div>
+                <div class="doc-meta"><%= a.pinned ? '置顶' : '' %></div>
+              </div>
+              <div class="doc-body">
+                <h3 style="margin:0 0 6px"><%= a.title %></h3>
                 <% if (a.image) { %>
                   <img src="<%= a.image %>" alt="" style="max-width:100%; height:auto; border-radius:8px; margin:6px 0" />
                 <% } %>
                 <p><%= a.content %></p>
               </div>
-            <% }) %>
-          <% } else { %>
-            <p>暂无公告</p>
-          <% } %>
-        </div>
+            </div>
+          </div>
+        <% }) %>
+      <% } %>
 
-        <div class="card">
-          <h2>新闻/文章</h2>
-          <% if (articles && articles.length) { %>
-            <% articles.forEach(n => { %>
-              <div class="card">
-                <h3><%= n.title %></h3>
+      <% if (articles && articles.length) { %>
+        <% articles.forEach(n => { %>
+          <div class="masonry-item">
+            <div class="doc-card">
+              <div class="doc-header"><div class="doc-title">文章</div></div>
+              <div class="doc-body">
+                <h3 style="margin:0 0 6px"><%= n.title %></h3>
                 <p><%= n.content %></p>
               </div>
-            <% }) %>
-          <% } else { %>
-            <p>暂无文章</p>
-          <% } %>
-        </div>
-      </section>
-
-      <aside>
-        <% if (!parent) { %>
-          <div class="card">
-            <h2>家长登录</h2>
-            <% if (typeof error !== 'undefined' && error) { %>
-              <p class="error"><%= error %></p>
-            <% } %>
-            <form method="post" action="/login">
-              <label>学号</label>
-              <input type="text" name="studentId" required />
-              <label>密码</label>
-              <input type="password" name="password" required />
-              <button type="submit">登录</button>
-            </form>
+            </div>
           </div>
-        <% } else { %>
-          <div class="card">
-            <h2>家长入口</h2>
-            <a href="/records"><button>查看学生档案</button></a>
+        <% }) %>
+      <% } %>
+
+      <% if (!parent) { %>
+        <div class="masonry-item">
+          <div class="doc-card">
+            <div class="doc-header"><div class="doc-title">家长登录</div></div>
+            <div class="doc-body">
+              <% if (typeof error !== 'undefined' && error) { %>
+                <p class="error"><%= error %></p>
+              <% } %>
+              <form method="post" action="/login">
+                <label>学号</label>
+                <input type="text" name="studentId" required />
+                <label>密码</label>
+                <input type="password" name="password" required />
+                <button type="submit">登录</button>
+              </form>
+            </div>
           </div>
-        <% } %>
-
-        <div class="card">
-          <h2>固定公告：禁止发型类型</h2>
-          <p>杀马特、海藻头、爆炸头、五颜六色渐变染等严禁出现，违者按校规处理。</p>
         </div>
-
-        <div class="card">
-          <h2>管理后台</h2>
-          <a href="/admin/login"><button>进入后台</button></a>
+      <% } else { %>
+        <div class="masonry-item">
+          <div class="doc-card">
+            <div class="doc-header"><div class="doc-title">家长入口</div></div>
+            <div class="doc-body"><a href="/records"><button>查看学生档案</button></a></div>
+          </div>
         </div>
-      </aside>
+      <% } %>
     </div>
   </div>
 </body>

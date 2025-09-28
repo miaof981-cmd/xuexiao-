@@ -203,8 +203,14 @@ function requireAdmin(req, res, next) {
 
 // Routes - Public
 app.get('/', (req, res) => {
-  const announcements = readJson(ANNOUNCEMENTS_PATH, []);
-  const articles = readJson(ARTICLES_PATH, []);
+  const announcementsRaw = readJson(ANNOUNCEMENTS_PATH, []);
+  const articlesRaw = readJson(ARTICLES_PATH, []);
+  const announcements = [...announcementsRaw].sort((a, b) => {
+    const pinDiff = Number(!!b.pinned) - Number(!!a.pinned);
+    if (pinDiff !== 0) return pinDiff;
+    return (b.createdAt || 0) - (a.createdAt || 0);
+  });
+  const articles = [...articlesRaw].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
   res.render('home', {
     parent: req.session.parent || null,
     announcements,
