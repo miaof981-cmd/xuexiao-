@@ -17,12 +17,16 @@
   <div class="container">
     <header>
       <h1>学校官网</h1>
-      <% if (parent) { %>
-        <form method="post" action="/logout">
-          <span>欢迎，<%= parent.name %>（学号：<%= parent.studentId %>）</span>
-          <button type="submit">退出</button>
-        </form>
-      <% } %>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <a href="/login?role=admin"><button>管理员登录</button></a>
+        <a href="/login?role=parent"><button>家长登录</button></a>
+        <% if (parent) { %>
+          <form method="post" action="/logout">
+            <span>欢迎，<%= parent.name %>（学号：<%= parent.studentId %>）</span>
+            <button type="submit">退出</button>
+          </form>
+        <% } %>
+      </div>
     </header>
 
     <div class="doc-card" style="padding:0; overflow:hidden; margin-bottom:16px">
@@ -63,25 +67,7 @@
         <% }) %>
       <% } %>
 
-      <% if (!parent) { %>
-        <div class="masonry-item">
-          <div class="doc-card">
-            <div class="doc-header"><div class="doc-title">家长登录</div></div>
-            <div class="doc-body">
-              <% if (typeof error !== 'undefined' && error) { %>
-                <p class="error"><%= error %></p>
-              <% } %>
-              <form method="post" action="/login">
-                <label>学号</label>
-                <input type="text" name="studentId" required />
-                <label>密码</label>
-                <input type="password" name="password" required />
-                <button type="submit">登录</button>
-              </form>
-            </div>
-          </div>
-        </div>
-      <% } else { %>
+      <% if (parent) { %>
         <div class="masonry-item">
           <div class="doc-card">
             <div class="doc-header"><div class="doc-title">家长入口</div></div>

@@ -14,6 +14,7 @@ const ARTICLES_PATH = path.join(DATA_DIR, 'articles.json');
 const USERS_PATH = path.join(DATA_DIR, 'users.json');
 const RECORDS_PATH = path.join(DATA_DIR, 'records.json');
 const AUDIT_PATH = path.join(DATA_DIR, 'audit.json');
+const ADMINS_PATH = path.join(DATA_DIR, 'admins.json');
 const UPLOADS_DIR = path.join(__dirname, 'public', 'uploads');
 
 // Ensure data directory exists
@@ -158,6 +159,11 @@ if (!fs.existsSync(AUDIT_PATH)) {
   writeJson(AUDIT_PATH, []);
 }
 
+if (!fs.existsSync(ADMINS_PATH)) {
+  // Default admin list with one admin
+  writeJson(ADMINS_PATH, [ { username: 'admin', password: 'admin123' } ]);
+}
+
 // View engine and middleware
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -218,18 +224,19 @@ app.get('/', (req, res) => {
   });
 });
 
+// Unified login page
+app.get('/login', (req, res) => {
+  const role = (req.query.role === 'admin') ? 'admin' : 'parent';
+  res.render('login', { role, error: null });
+});
+
 // Parent login
 app.post('/login', (req, res) => {
   const { studentId, password } = req.body;
   const users = readJson(USERS_PATH, []);
   const user = users.find((u) => u.studentId === studentId && u.password === password);
   if (!user) {
-    return res.status(401).render('home', {
-      parent: null,
-      announcements: readJson(ANNOUNCEMENTS_PATH, []),
-      articles: readJson(ARTICLES_PATH, []),
-      error: '学号或密码错误'
-    });
+    return res.status(401).render('login', { role: 'parent', error: '学号或密码错误' });
   }
   req.session.parent = { studentId: user.studentId, name: user.name };
   res.redirect('/records');
@@ -249,8 +256,7 @@ app.get('/records', requireParent, (req, res) => {
   res.render('records', { parent: req.session.parent, records });
 });
 
-// Admin routes (simple hardcoded admin login)
-const ADMIN_USER = { username: 'admin', password: 'admin123' };
+// Admin routes (stored in admins.json)
 
 app.get('/admin/login', (req, res) => {
   if (req.session.admin) return res.redirect('/admin');
@@ -259,12 +265,13 @@ app.get('/admin/login', (req, res) => {
 
 app.post('/admin/login', (req, res) => {
   const { username, password } = req.body;
-  if (username === ADMIN_USER.username && password === ADMIN_USER.password) {
-    req.session.admin = { username };
-    return res.redirect('/admin');
-  }
+  const admins = readJson(ADMINS_PATH, []);
+  const ok = admins.find(a => a.username === username && a.password === password);
+  if (ok) { req.session.admin = { username }; return res.redirect('/admin'); }
   res.status(401).render('admin/login', { error: '用户名或密码错误' });
 });
+
+// 注意：管理员新建仅允许在登录后的后台内进行（出于安全考虑），公共入口已移除。
 
 app.post('/admin/logout', (req, res) => {
   req.session.destroy(() => res.redirect('/admin/login'));
