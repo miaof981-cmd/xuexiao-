@@ -1,0 +1,12 @@
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif; background: #f6f7fb; color: #222; }
+a { text-decoration: none; }
+button { background: #1f6feb; color: #fff; border: none; border-radius: 6px; padding: 8px 12px; cursor: pointer; }
+button:hover { background: #1558c0; }
+input, textarea, select { border: 1px solid #ccc; border-radius: 6px; }
+
+/* 让卡片在高分屏更锐利 */
+@media (min-resolution: 2dppx) {
+  .doc-card { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+}
+
+

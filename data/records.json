@@ -1,0 +1,55 @@
+{
+  "2023001": {
+    "reportCards": [],
+    "punishments": [],
+    "images": [
+      {
+        "id": "1758809390547",
+        "title": "春游",
+        "description": "",
+        "url": "/uploads/1758809390543_WechatIMG82.jpg",
+        "uploadedAt": 1758809390547
+      }
+    ]
+  },
+  "20230001": {
+    "reportCards": [
+      {
+        "term": "",
+        "chinese": 0,
+        "math": 0,
+        "english": 0,
+        "physics": 0,
+        "chemistry": 0
+      },
+      {
+        "term": "2024-2025 上学期",
+        "chinese": 92,
+        "math": 95,
+        "english": 90,
+        "physics": 88,
+        "chemistry": 90
+      }
+    ],
+    "punishments": [
+      {
+        "date": "2025-03-10",
+        "type": "警告",
+        "reason": "上课讲话影响他人学习"
+      }
+    ],
+    "images": [
+      {
+        "id": "1759042392656",
+        "title": "图片档案",
+        "description": "",
+        "url": "/uploads/1759042392649_WechatIMG82.jpg",
+        "uploadedAt": 1759042392656
+      }
+    ]
+  },
+  "20230002": {
+    "reportCards": [],
+    "punishments": []
+  }
+}

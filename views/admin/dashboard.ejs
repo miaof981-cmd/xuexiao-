@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>管理后台</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    .container { max-width: 1080px; margin: 0 auto; padding: 16px; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .card { border: 1px solid #ddd; border-radius: 8px; padding: 12px; background: #fff; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid #ddd; padding: 6px; }
+    form { display: grid; gap: 8px; }
+    input, textarea, select, button { padding: 8px; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>管理后台</h1>
+    <form method="post" action="/admin/logout" style="margin-bottom: 12px">
+      <button type="submit">退出登录</button>
+    </form>
+    <p><a href="/admin/uploads"><button>查看上传文件</button></a></p>
+
+    <div class="row">
+      <div class="card">
+        <h2>公告管理</h2>
+        <form method="post" action="/admin/announcements">
+          <label>标题</label>
+          <input name="title" required />
+          <label>内容</label>
+          <textarea name="content" rows="3" required></textarea>
+          <label>
+            <input type="checkbox" name="pinned" /> 置顶
+          </label>
+          <button type="submit">新增公告</button>
+        </form>
+        <h3>现有公告</h3>
+        <table>
+          <thead><tr><th>标题</th><th>置顶</th><th>操作</th></tr></thead>
+          <tbody>
+            <% announcements.forEach(a => { %>
+              <tr>
+                <td><%= a.title %></td>
+                <td><%= a.pinned ? '是' : '否' %></td>
+                <td>
+                  <form method="post" action="/admin/announcements/<%= a.id %>/delete" style="display:inline">
+                    <button type="submit">删除</button>
+                  </form>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>文章管理</h2>
+        <form method="post" action="/admin/articles">
+          <label>标题</label>
+          <input name="title" required />
+          <label>内容</label>
+          <textarea name="content" rows="3" required></textarea>
+          <button type="submit">发布文章</button>
+        </form>
+        <h3>现有文章</h3>
+        <table>
+          <thead><tr><th>标题</th><th>操作</th></tr></thead>
+          <tbody>
+            <% articles.forEach(n => { %>
+              <tr>
+                <td><%= n.title %></td>
+                <td>
+                  <form method="post" action="/admin/articles/<%= n.id %>/delete" style="display:inline">
+                    <button type="submit">删除</button>
+                  </form>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h2>档案管理（成绩单/处分单/图片）</h2>
+      <form method="post" action="/admin/records/add" enctype="multipart/form-data">
+        <label>学号</label>
+        <input name="studentId" required />
+        <label>类型</label>
+        <select name="type" id="record-type">
+          <option value="reportCard">成绩单</option>
+          <option value="punishment">处分单</option>
+          <option value="image">图片档案</option>
+        </select>
+
+        <fieldset id="fieldset-report" style="border:1px solid #ddd;padding:8px">
+          <legend>成绩单字段</legend>
+          <label>学期</label>
+          <input name="term" />
+          <label>语文</label>
+          <input name="chinese" type="number" />
+          <label>数学</label>
+          <input name="math" type="number" />
+          <label>英语</label>
+          <input name="english" type="number" />
+          <label>物理</label>
+          <input name="physics" type="number" />
+          <label>化学</label>
+          <input name="chemistry" type="number" />
+        </fieldset>
+
+        <fieldset id="fieldset-punish" style="border:1px solid #ddd;padding:8px;margin-top:8px">
+          <legend>处分字段</legend>
+          <label>日期</label>
+          <input name="date" type="date" />
+          <label>类型</label>
+          <input name="ptype" />
+          <label>原因</label>
+          <input name="reason" />
+        </fieldset>
+
+        <fieldset id="fieldset-image" style="border:1px solid #ddd;padding:8px;margin-top:8px">
+          <legend>图片档案</legend>
+          <label>标题</label>
+          <input name="title" />
+          <label>描述</label>
+          <input name="description" />
+          <label>图片URL（可选）</label>
+          <input name="imageUrl" placeholder="https://..." />
+          <label>或上传图片文件（可选）</label>
+          <input type="file" name="imageFile" accept="image/*" />
+        </fieldset>
+
+        <button type="submit" style="margin-top:8px">添加档案</button>
+      </form>
+      <script>
+        (function(){
+          const sel = document.getElementById('record-type');
+          const fr = document.getElementById('fieldset-report');
+          const fp = document.getElementById('fieldset-punish');
+          const fi = document.getElementById('fieldset-image');
+          const update = () => {
+            const v = sel.value;
+            fr.style.display = v === 'reportCard' ? 'block' : 'none';
+            fp.style.display = v === 'punishment' ? 'block' : 'none';
+            fi.style.display = v === 'image' ? 'block' : 'none';
+          };
+          sel.addEventListener('change', update);
+          // 默认显示图片档案，降低误选概率
+          sel.value = 'image';
+          update();
+        })();
+      </script>
+    </div>
+  </div>
+</body>
+</html>
+
+

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>学生档案</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    .container { max-width: 1080px; margin: 0 auto; padding: 16px; }
+    .toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
+    .masonry { column-count: 3; column-gap: 16px; }
+    @media (max-width: 960px) { .masonry { column-count: 2; } }
+    @media (max-width: 600px) { .masonry { column-count: 1; } }
+    .masonry-item { break-inside: avoid; margin-bottom: 16px; display: inline-block; width: 100%; }
+    /* 通用卡片外框，拟物化纸张视觉 */
+    .doc-card { background: #fff; border-radius: 12px; border: 1px solid #e6e6e6; box-shadow: 0 6px 16px rgba(17, 24, 39, 0.08); overflow: hidden; }
+    .doc-header { padding: 12px 16px; background: linear-gradient(90deg, #f0f4ff, #ffffff); border-bottom: 1px solid #eee; display:flex; justify-content: space-between; align-items:center; }
+    .doc-title { font-weight: 700; color: #111827; }
+    .doc-meta { font-size: 12px; color: #6b7280; }
+    .doc-body { padding: 16px; }
+    .badge { display:inline-block; font-size: 12px; padding: 4px 8px; border-radius: 999px; background:#eef2ff; color:#3730a3; }
+    /* 成绩单模板 */
+    .report-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .score { background:#f9fafb; border:1px dashed #e5e7eb; border-radius:8px; padding:8px; display:flex; justify-content:space-between; }
+    .score span:first-child { color:#6b7280; }
+    /* 处分单模板 */
+    .punish { background: repeating-linear-gradient( 45deg, #fff, #fff 10px, #fdf2f2 10px, #fdf2f2 20px ); border:1px solid #fecaca; border-radius:10px; padding:12px; }
+    .punish h4 { margin: 0 0 6px; color:#991b1b; }
+    .punish p { margin: 4px 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>学生档案</h1>
+    <p>家长：<%= parent.name %>（学号：<%= parent.studentId %>）</p>
+    <div class="toolbar">
+      <a href="/"><button>返回首页</button></a>
+      <form method="post" action="/logout" style="display:inline-block"><button type="submit">退出</button></form>
+    </div>
+
+    <div class="masonry">
+      <% if (records.reportCards && records.reportCards.length) { %>
+        <% records.reportCards.forEach(rc => { %>
+          <div class="masonry-item">
+            <div class="doc-card">
+              <div class="doc-header">
+                <div class="doc-title">成绩单</div>
+                <div class="doc-meta"><span class="badge"><%= rc.term %></span></div>
+              </div>
+              <div class="doc-body">
+                <div class="report-grid">
+                  <div class="score"><span>语文</span><strong><%= rc.chinese %></strong></div>
+                  <div class="score"><span>数学</span><strong><%= rc.math %></strong></div>
+                  <div class="score"><span>英语</span><strong><%= rc.english %></strong></div>
+                  <div class="score"><span>物理</span><strong><%= rc.physics %></strong></div>
+                  <div class="score"><span>化学</span><strong><%= rc.chemistry %></strong></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        <% }) %>
+      <% } %>
+
+      <% if (records.punishments && records.punishments.length) { %>
+        <% records.punishments.forEach(p => { %>
+          <div class="masonry-item">
+            <div class="doc-card">
+              <div class="doc-header">
+                <div class="doc-title">处分单</div>
+                <div class="doc-meta"><%= p.date %></div>
+              </div>
+              <div class="doc-body">
+                <div class="punish">
+                  <h4>处分类型：<%= p.type %></h4>
+                  <p>原因：<%= p.reason %></p>
+                </div>
+              </div>
+            </div>
+          </div>
+        <% }) %>
+      <% } %>
+
+      <% if (records.images && records.images.length) { %>
+        <% records.images.forEach(img => { %>
+          <div class="masonry-item">
+            <div class="doc-card">
+              <div class="doc-header">
+                <div class="doc-title"><%= img.title || '图片档案' %></div>
+                <div class="doc-meta"><%= new Date(img.uploadedAt).toLocaleDateString('zh-CN') %></div>
+              </div>
+              <div class="doc-body">
+                <img src="<%= img.url %>" alt="image" style="width:100%; height:auto; border-radius:8px;" />
+                <% if (img.description) { %>
+                  <p style="margin-top:8px; color:#4b5563"><%= img.description %></p>
+                <% } %>
+              </div>
+            </div>
+          </div>
+        <% }) %>
+      <% } %>
+
+      <% if ((!records.reportCards || !records.reportCards.length) && (!records.punishments || !records.punishments.length) && (!records.images || !records.images.length)) { %>
+        <p>暂无记录</p>
+      <% } %>
+    </div>
+  </div>
+</body>
+</html>
+
+
