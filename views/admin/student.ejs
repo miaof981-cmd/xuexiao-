@@ -71,7 +71,9 @@
       <% }) %>
 
       <% if ((!records.reportCards || !records.reportCards.length) && (!records.punishments || !records.punishments.length) && (!records.images || !records.images.length)) { %>
-        <p>暂无记录</p>
+        <div class="masonry-item">
+          <div class="doc-card"><div class="doc-body"><p style="margin:0; color:#6b7280; text-align:center">暂无记录</p></div></div>
+        </div>
       <% } %>
     </div>
   </div>
