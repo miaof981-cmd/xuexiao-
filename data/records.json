@@ -51,5 +51,19 @@
   "20230002": {
     "reportCards": [],
     "punishments": []
+  },
+  "20230003": {
+    "reportCards": [
+      {
+        "term": "小测",
+        "chinese": 15,
+        "math": 34,
+        "english": 12,
+        "physics": 12,
+        "chemistry": 23
+      }
+    ],
+    "punishments": [],
+    "images": []
   }
 }

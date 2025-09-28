@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>学生档案查看</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style></style>
+</head>
+<body>
+  <div class="container">
+    <h1>学生档案查看</h1>
+    <div class="toolbar">
+      <a href="/admin/students"><button>返回学生列表</button></a>
+      <span>学号：<%= student.studentId %>，家长：<%= student.name || '' %></span>
+    </div>
+
+    <div class="masonry">
+      <% (records.reportCards||[]).forEach(rc => { %>
+        <div class="masonry-item">
+          <div class="doc-card">
+            <div class="doc-header">
+              <div class="doc-title">成绩单</div>
+              <div class="doc-meta"><span class="badge"><%= rc.term %></span></div>
+            </div>
+            <div class="doc-body">
+              <div class="report-grid">
+                <div class="score"><span>语文</span><strong><%= rc.chinese %></strong></div>
+                <div class="score"><span>数学</span><strong><%= rc.math %></strong></div>
+                <div class="score"><span>英语</span><strong><%= rc.english %></strong></div>
+                <div class="score"><span>物理</span><strong><%= rc.physics %></strong></div>
+                <div class="score"><span>化学</span><strong><%= rc.chemistry %></strong></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% }) %>
+
+      <% (records.punishments||[]).forEach(p => { %>
+        <div class="masonry-item">
+          <div class="doc-card">
+            <div class="doc-header">
+              <div class="doc-title">处分单</div>
+              <div class="doc-meta"><%= p.date %></div>
+            </div>
+            <div class="doc-body">
+              <div class="punish">
+                <h4>处分类型：<%= p.type %></h4>
+                <p>原因：<%= p.reason %></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% }) %>
+
+      <% (records.images||[]).forEach(img => { %>
+        <div class="masonry-item">
+          <div class="doc-card">
+            <div class="doc-header">
+              <div class="doc-title"><%= img.title || '图片档案' %></div>
+              <div class="doc-meta"><%= new Date(img.uploadedAt).toLocaleDateString('zh-CN') %></div>
+            </div>
+            <div class="doc-body">
+              <img src="<%= img.url %>" alt="" style="width:100%; height:auto; border-radius:8px" />
+              <% if (img.description) { %>
+                <p style="margin-top:8px; color:#4b5563"><%= img.description %></p>
+              <% } %>
+            </div>
+          </div>
+        </div>
+      <% }) %>
+
+      <% if ((!records.reportCards || !records.reportCards.length) && (!records.punishments || !records.punishments.length) && (!records.images || !records.images.length)) { %>
+        <p>暂无记录</p>
+      <% } %>
+    </div>
+  </div>
+</body>
+</html>
+
+

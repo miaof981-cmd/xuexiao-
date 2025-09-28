@@ -22,11 +22,12 @@
       <button type="submit">退出登录</button>
     </form>
     <p><a href="/admin/uploads"><button>查看上传文件</button></a></p>
+    <p><a href="/admin/students"><button>学生管理</button></a> <a href="/admin/logs"><button>操作日志</button></a></p>
 
     <div class="row">
       <div class="card">
         <h2>公告管理</h2>
-        <form method="post" action="/admin/announcements">
+        <form method="post" action="/admin/announcements" enctype="multipart/form-data">
           <label>标题</label>
           <input name="title" required />
           <label>内容</label>
@@ -34,6 +35,10 @@
           <label>
             <input type="checkbox" name="pinned" /> 置顶
           </label>
+          <label>图片URL（可选）</label>
+          <input name="imageUrl" placeholder="https://..." />
+          <label>或上传图片（可选）</label>
+          <input type="file" name="annImage" accept="image/*" />
           <button type="submit">新增公告</button>
         </form>
         <h3>现有公告</h3>

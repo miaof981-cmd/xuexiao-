@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>学生管理</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    .container { max-width: 1080px; margin: 0 auto; padding: 16px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid #ddd; padding: 8px; }
+    form { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    fieldset { border:1px solid #ddd; padding:8px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>学生管理</h1>
+    <p><a href="/admin"><button>返回后台</button></a></p>
+    <h2>学生列表</h2>
+    <table>
+      <thead><tr><th>学号</th><th>家长名称</th><th>操作</th></tr></thead>
+      <tbody>
+        <% users.forEach(u => { %>
+          <tr>
+            <td><%= u.studentId %></td>
+            <td><%= u.name %></td>
+            <td><a href="/admin/students/<%= u.studentId %>"><button>查看档案</button></a></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+
+    <p style="margin-top:16px"><a href="/admin/students/new"><button>新建学生</button></a></p>
+  </div>
+</body>
+</html>
+
+

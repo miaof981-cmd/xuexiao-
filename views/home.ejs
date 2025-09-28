@@ -40,6 +40,9 @@
             <% announcements.forEach(a => { %>
               <div class="card">
                 <h3><%= a.title %> <% if (a.pinned) { %><span class="pinned">[置顶]</span><% } %></h3>
+                <% if (a.image) { %>
+                  <img src="<%= a.image %>" alt="" style="max-width:100%; height:auto; border-radius:8px; margin:6px 0" />
+                <% } %>
                 <p><%= a.content %></p>
               </div>
             <% }) %>

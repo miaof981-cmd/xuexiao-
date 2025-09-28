@@ -13,6 +13,7 @@ const ANNOUNCEMENTS_PATH = path.join(DATA_DIR, 'announcements.json');
 const ARTICLES_PATH = path.join(DATA_DIR, 'articles.json');
 const USERS_PATH = path.join(DATA_DIR, 'users.json');
 const RECORDS_PATH = path.join(DATA_DIR, 'records.json');
+const AUDIT_PATH = path.join(DATA_DIR, 'audit.json');
 const UPLOADS_DIR = path.join(__dirname, 'public', 'uploads');
 
 // Ensure data directory exists
@@ -41,6 +42,26 @@ function writeJson(filePath, data) {
   } catch (err) {
     console.error('Failed to write JSON', filePath, err);
   }
+}
+
+function appendAuditLog(entry) {
+  try {
+    const logs = readJson(AUDIT_PATH, []);
+    logs.unshift({ id: String(Date.now()), ...entry });
+    writeJson(AUDIT_PATH, logs.slice(0, 5000));
+  } catch (e) {
+    console.error('Failed to append audit log', e);
+  }
+}
+
+// Generate next studentId sequentially, preserving width
+function generateNextStudentId() {
+  const users = readJson(USERS_PATH, []);
+  if (!users.length) return '20230001';
+  const maxLen = Math.max(...users.map(u => String(u.studentId).length));
+  const maxNum = users.reduce((m, u) => Math.max(m, Number(u.studentId) || 0), 0);
+  const nextNum = maxNum + 1;
+  return String(nextNum).padStart(maxLen, '0');
 }
 
 // Normalize a studentId to the canonical one in users.json (handles missing leading zeros)
@@ -131,6 +152,10 @@ if (!fs.existsSync(RECORDS_PATH)) {
       images: []
     }
   });
+}
+
+if (!fs.existsSync(AUDIT_PATH)) {
+  writeJson(AUDIT_PATH, []);
 }
 
 // View engine and middleware
@@ -268,12 +293,15 @@ app.get('/admin/uploads', requireAdmin, (req, res) => {
 });
 
 // Admin: Announcements CRUD (MVP minimal)
-app.post('/admin/announcements', requireAdmin, (req, res) => {
-  const { title, content, pinned } = req.body;
+app.post('/admin/announcements', requireAdmin, upload.single('annImage'), (req, res) => {
+  const { title, content, pinned, imageUrl } = req.body;
   const announcements = readJson(ANNOUNCEMENTS_PATH, []);
-  const newItem = { id: String(Date.now()), title, content, pinned: Boolean(pinned), createdAt: Date.now() };
+  let img = (imageUrl || '').trim() || null;
+  if (req.file && req.file.filename) img = `/uploads/${req.file.filename}`;
+  const newItem = { id: String(Date.now()), title, content, pinned: Boolean(pinned), image: img, createdAt: Date.now() };
   announcements.unshift(newItem);
   writeJson(ANNOUNCEMENTS_PATH, announcements);
+  appendAuditLog({ when: Date.now(), user: (req.session.admin && req.session.admin.username) || 'admin', type: 'announcement.create', payload: { id: newItem.id, title, image: img } });
   res.redirect('/admin');
 });
 
@@ -282,6 +310,7 @@ app.post('/admin/announcements/:id/delete', requireAdmin, (req, res) => {
   const announcements = readJson(ANNOUNCEMENTS_PATH, []);
   const next = announcements.filter((a) => a.id !== id);
   writeJson(ANNOUNCEMENTS_PATH, next);
+  appendAuditLog({ when: Date.now(), user: (req.session.admin && req.session.admin.username) || 'admin', type: 'announcement.delete', payload: { id } });
   res.redirect('/admin');
 });
 
@@ -292,6 +321,7 @@ app.post('/admin/articles', requireAdmin, (req, res) => {
   const newItem = { id: String(Date.now()), title, content, createdAt: Date.now() };
   articles.unshift(newItem);
   writeJson(ARTICLES_PATH, articles);
+   appendAuditLog({ when: Date.now(), user: (req.session.admin && req.session.admin.username) || 'admin', type: 'article.create', payload: { id: newItem.id, title } });
   res.redirect('/admin');
 });
 
@@ -300,6 +330,7 @@ app.post('/admin/articles/:id/delete', requireAdmin, (req, res) => {
   const articles = readJson(ARTICLES_PATH, []);
   const next = articles.filter((a) => a.id !== id);
   writeJson(ARTICLES_PATH, next);
+  appendAuditLog({ when: Date.now(), user: (req.session.admin && req.session.admin.username) || 'admin', type: 'article.delete', payload: { id } });
   res.redirect('/admin');
 });
 
@@ -346,11 +377,66 @@ app.post('/admin/records/add', requireAdmin, upload.single('imageFile'), (req, r
         url,
         uploadedAt: Date.now()
       });
+      appendAuditLog({ when: Date.now(), user: (req.session.admin && req.session.admin.username) || 'admin', type: 'record.add.image', payload: { studentId: targetId, url } });
     }
   }
 
   writeJson(RECORDS_PATH, allRecords);
   res.redirect('/admin');
+});
+
+// Admin: Students management routes
+app.get('/admin/students', requireAdmin, (req, res) => {
+  const users = readJson(USERS_PATH, []);
+  res.render('admin/students', { users });
+});
+
+app.get('/admin/students/new', requireAdmin, (req, res) => {
+  const nextId = generateNextStudentId();
+  res.render('admin/student_new', { nextId });
+});
+
+app.get('/admin/students/:id', requireAdmin, (req, res) => {
+  const id = req.params.id;
+  const allRecords = readJson(RECORDS_PATH, {});
+  const records = allRecords[id] || { reportCards: [], punishments: [], images: [] };
+  const users = readJson(USERS_PATH, []);
+  const user = users.find((u) => u.studentId === id) || { studentId: id, name: '' };
+  res.render('admin/student', { student: user, records });
+});
+
+app.post('/admin/students/create', requireAdmin, upload.single('initImageFile'), (req, res) => {
+  const { password, name } = req.body;
+  const users = readJson(USERS_PATH, []);
+  const canonical = generateNextStudentId();
+  users.push({ studentId: canonical, password: password || '123456', name: name || `${canonical}家长` });
+  writeJson(USERS_PATH, users);
+
+  const allRecords = readJson(RECORDS_PATH, {});
+  if (!allRecords[canonical]) allRecords[canonical] = { reportCards: [], punishments: [], images: [] };
+
+  const providedImageUrl = (req.body.initImageUrl || '').trim();
+  if (req.body.initType === 'reportCard') {
+    const { term, chinese, math, english, physics, chemistry } = req.body;
+    allRecords[canonical].reportCards.unshift({ term, chinese: Number(chinese||0), math: Number(math||0), english: Number(english||0), physics: Number(physics||0), chemistry: Number(chemistry||0) });
+  } else if (req.body.initType === 'punishment') {
+    const { date, ptype, reason } = req.body;
+    allRecords[canonical].punishments.unshift({ date, type: ptype, reason });
+  } else if (req.body.initType === 'image') {
+    let url = providedImageUrl || null;
+    if (req.file && req.file.filename) url = `/uploads/${req.file.filename}`;
+    if (url) allRecords[canonical].images.unshift({ id: String(Date.now()), title: req.body.initTitle || '图片档案', description: req.body.initDesc || '', url, uploadedAt: Date.now() });
+  }
+  writeJson(RECORDS_PATH, allRecords);
+
+  appendAuditLog({ when: Date.now(), user: (req.session.admin && req.session.admin.username) || 'admin', type: 'student.create', payload: { studentId: canonical, name } });
+  res.redirect('/admin/students');
+});
+
+// Admin: audit logs
+app.get('/admin/logs', requireAdmin, (req, res) => {
+  const logs = readJson(AUDIT_PATH, []);
+  res.render('admin/logs', { logs });
 });
 
 app.listen(PORT, () => {

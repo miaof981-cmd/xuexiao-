@@ -8,5 +8,10 @@
     "studentId": "20230002",
     "password": "abcdef",
     "name": "李四家长"
+  },
+  {
+    "studentId": "20230003",
+    "password": "123456",
+    "name": "莉莉"
   }
 ]

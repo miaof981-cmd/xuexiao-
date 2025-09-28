@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>操作日志</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    .container { max-width: 1080px; margin: 0 auto; padding: 16px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid #ddd; padding: 8px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>操作日志</h1>
+    <p><a href="/admin"><button>返回后台</button></a></p>
+    <table>
+      <thead><tr><th>时间</th><th>管理员</th><th>类型</th><th>详情</th></tr></thead>
+      <tbody>
+        <% logs.forEach(l => { %>
+          <tr>
+            <td><%= new Date(l.when).toLocaleString('zh-CN') %></td>
+            <td><%= l.user %></td>
+            <td><%= l.type %></td>
+            <td><pre style="white-space:pre-wrap"><%= JSON.stringify(l.payload || {}, null, 2) %></pre></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>
+
+
