@@ -26,15 +26,16 @@
 <body>
   <div class="container">
     <header style="background:#2457A6; height:60px; color:#fff; width:100%; border-radius:10px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; height:100%; padding:0 12px; box-sizing:border-box;">
-        <div style="display:flex; align-items:center; gap:12px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; height:100%; padding:0 16px; box-sizing:border-box;">
+        <div style="display:flex; align-items:center; gap:12px; flex:0 0 auto;">
           <% if (site && site.logo) { %>
-            <img src="<%= site.logo %>" alt="logo" style="height:40px; width:auto" />
+            <img src="<%= site.logo %>" alt="logo" style="height:40px; width:auto; display:block" />
           <% } else { %>
             <h1 style="margin:0; color:#fff; font-size:20px;">学校官网</h1>
           <% } %>
         </div>
-        <div style="display:flex; align-items:center; gap:16px;">
+        <div style="flex:1 1 auto"></div>
+        <div style="display:flex; align-items:center; gap:16px; flex:0 0 auto;">
           <a href="/login?role=admin" style="text-decoration:none;"><span style="display:inline-block; background:#fff; color:#2457A6; padding:8px 12px; border-radius:8px; font-weight:600;">管理员登录</span></a>
           <a href="/login?role=parent" style="text-decoration:none;"><span style="display:inline-block; background:#fff; color:#2457A6; padding:8px 12px; border-radius:8px; font-weight:600;">家长登录</span></a>
           <% if (parent) { %>

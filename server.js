@@ -347,7 +347,7 @@ app.post('/admin/logout', (req, res) => {
 app.get('/admin', requireAdmin, (req, res) => {
   const announcements = readJson(ANNOUNCEMENTS_PATH, []);
   const articles = readJson(ARTICLES_PATH, []);
-  const site = readJson(SITE_PATH, { logo: null, admissionBg: null, banners: [] });
+  const site = readJson(SITE_PATH, { logo: null, admissionBg: null, banners: [], idPrefix: '2025' });
   res.render('admin/dashboard', { admin: req.session.admin, announcements, articles, site });
 });
 
@@ -358,6 +358,27 @@ app.post('/admin/site/id-prefix', requireAdmin, (req, res) => {
   site.idPrefix = String(idPrefix || '2025').replace(/[^0-9]/g, '').slice(0, 8) || '2025';
   writeJson(SITE_PATH, site);
   appendAuditLog({ when: Date.now(), user: (req.session.admin && req.session.admin.username) || 'admin', type: 'site.idPrefix.update', payload: { idPrefix: site.idPrefix } });
+  res.redirect('/admin');
+});
+
+// Admin: update site logo (transparent PNG recommended)
+app.post('/admin/site/logo', requireAdmin, upload.single('logo'), (req, res) => {
+  const site = readJson(SITE_PATH, { logo: null, admissionBg: null, banners: [], idPrefix: '2025' });
+  let url = (req.body.logoUrl || '').trim();
+  if (req.file && req.file.filename) {
+    url = `/uploads/${req.file.filename}`;
+  }
+  site.logo = url || null;
+  writeJson(SITE_PATH, site);
+  appendAuditLog({ when: Date.now(), user: (req.session.admin && req.session.admin.username) || 'admin', type: 'site.logo.update', payload: { logo: site.logo } });
+  res.redirect('/admin');
+});
+
+app.post('/admin/site/logo/delete', requireAdmin, (req, res) => {
+  const site = readJson(SITE_PATH, { logo: null, admissionBg: null, banners: [], idPrefix: '2025' });
+  site.logo = null;
+  writeJson(SITE_PATH, site);
+  appendAuditLog({ when: Date.now(), user: (req.session.admin && req.session.admin.username) || 'admin', type: 'site.logo.delete', payload: {} });
   res.redirect('/admin');
 });
 

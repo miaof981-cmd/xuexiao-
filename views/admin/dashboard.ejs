@@ -89,7 +89,27 @@
     </div>
 
     <div class="card" style="margin-top:16px">
-      <h2>站点设置 - 学号前缀与轮播图管理</h2>
+      <h2>站点设置 - Logo/学号前缀/轮播图</h2>
+      <form method="post" action="/admin/site/logo" enctype="multipart/form-data" style="margin-bottom:8px; display:grid; gap:8px; align-items:center; grid-template-columns: 1fr auto;">
+        <div>
+          <label>Logo URL（可选）</label>
+          <input name="logoUrl" placeholder="https://..." />
+          <label style="display:block; margin-top:6px">或上传 Logo（建议透明 PNG）</label>
+          <input type="file" name="logo" accept="image/*" />
+        </div>
+        <div style="text-align:right">
+          <button type="submit">保存 Logo</button>
+          <form method="post" action="/admin/site/logo/delete" style="display:inline">
+            <button type="submit" style="margin-left:8px">移除 Logo</button>
+          </form>
+        </div>
+      </form>
+      <% if (site && site.logo) { %>
+        <div style="margin:8px 0">
+          <span>当前 Logo 预览：</span>
+          <img src="<%= site.logo %>" alt="logo" style="height:40px; width:auto; vertical-align:middle" />
+        </div>
+      <% } %>
       <form method="post" action="/admin/site/id-prefix" style="margin-bottom:8px; display:flex; gap:8px; align-items:center">
         <label>学号前缀</label>
         <input name="idPrefix" value="<%= (site && site.idPrefix) || '2025' %>" style="width:120px" />
