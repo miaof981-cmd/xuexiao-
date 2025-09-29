@@ -25,23 +25,62 @@
   </head>
 <body>
   <div class="container">
-    <header>
-      <h1>学校官网</h1>
-      <div style="display:flex; gap:8px; align-items:center;">
-        <a href="/login?role=admin"><button>管理员登录</button></a>
-        <a href="/login?role=parent"><button>家长登录</button></a>
-        <% if (parent) { %>
-          <form method="post" action="/logout">
-            <span>欢迎，<%= parent.name %>（学号：<%= parent.studentId %>）</span>
-            <button type="submit">退出</button>
-          </form>
-        <% } %>
+    <header style="background:#2457A6; height:60px; color:#fff; width:100%; border-radius:10px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; height:100%; padding:0 12px; box-sizing:border-box;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <% if (site && site.logo) { %>
+            <img src="<%= site.logo %>" alt="logo" style="height:40px; width:auto" />
+          <% } else { %>
+            <h1 style="margin:0; color:#fff; font-size:20px;">学校官网</h1>
+          <% } %>
+        </div>
+        <div style="display:flex; align-items:center; gap:16px;">
+          <a href="/login?role=admin" style="text-decoration:none;"><span style="display:inline-block; background:#fff; color:#2457A6; padding:8px 12px; border-radius:8px; font-weight:600;">管理员登录</span></a>
+          <a href="/login?role=parent" style="text-decoration:none;"><span style="display:inline-block; background:#fff; color:#2457A6; padding:8px 12px; border-radius:8px; font-weight:600;">家长登录</span></a>
+          <% if (parent) { %>
+            <form method="post" action="/logout" style="display:flex; align-items:center; gap:8px;">
+              <span style="margin-right:6px; white-space:nowrap;">欢迎，<%= parent.name %>（学号：<%= parent.studentId %>）</span>
+              <button style="background:#fff;color:#2457A6; padding:8px 12px; border-radius:8px" type="submit">退出</button>
+            </form>
+          <% } %>
+        </div>
       </div>
     </header>
 
-    <div class="doc-card" style="padding:0; overflow:hidden; margin-bottom:16px">
-      <img src="/banners/blue-graduation-hero.svg" alt="欢迎横幅" style="display:block; width:100%; height:auto" />
-    </div>
+    <% const banners = (site && site.banners) || []; %>
+    <% if (banners.length) { %>
+      <div class="doc-card" style="padding:0; overflow:hidden; margin-bottom:16px; position:relative;">
+        <div id="carousel" style="position:relative;">
+          <% banners.forEach((b, i) => { %>
+            <img class="slide" src="<%= b %>" alt="banner" style="display:<%= i===0?'block':'none' %>; width:100%; height:auto;" />
+          <% }) %>
+          <button id="prev" style="position:absolute; left:8px; top:50%; transform:translateY(-50%);">‹</button>
+          <button id="next" style="position:absolute; right:8px; top:50%; transform:translateY(-50%);">›</button>
+        </div>
+      </div>
+      <script>
+        (function(){
+          const root = document.getElementById('carousel');
+          if (!root) return;
+          const slides = Array.from(root.querySelectorAll('.slide'));
+          if (!slides.length) return;
+          let idx = 0; let t;
+          function show(i){ slides.forEach((s, j)=>{ s.style.display = j===i ? 'block' : 'none'; }); idx = i; }
+          function next(){ show((idx+1)%slides.length); }
+          function prev(){ show((idx-1+slides.length)%slides.length); }
+          const n = document.getElementById('next');
+          const p = document.getElementById('prev');
+          if (n) n.onclick = ()=>{ next(); restart(); };
+          if (p) p.onclick = ()=>{ prev(); restart(); };
+          function restart(){ clearInterval(t); t=setInterval(next, 4000); }
+          restart();
+        })();
+      </script>
+    <% } else { %>
+      <div class="doc-card" style="padding:0; overflow:hidden; margin-bottom:16px">
+        <img src="/banners/blue-graduation-hero.svg" alt="欢迎横幅" style="display:block; width:100%; height:auto" />
+      </div>
+    <% } %>
     <% const mainA = (announcements && announcements.length) ? (announcements.find(a=>a.image) || announcements.find(a=>a.pinned) || announcements[0]) : null; %>
     <% const restA = (announcements || []).filter(a => mainA ? a.id !== mainA.id : true).filter(a=>!a.image).slice(0,8); %>
     <% const topArticles = (articles || []).slice(0,6); %>

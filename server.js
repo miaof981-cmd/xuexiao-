@@ -16,6 +16,7 @@ const RECORDS_PATH = path.join(DATA_DIR, 'records.json');
 const AUDIT_PATH = path.join(DATA_DIR, 'audit.json');
 const ADMINS_PATH = path.join(DATA_DIR, 'admins.json');
 const UPLOADS_DIR = path.join(__dirname, 'public', 'uploads');
+const SITE_PATH = path.join(DATA_DIR, 'site.json');
 
 // Ensure data directory exists
 if (!fs.existsSync(DATA_DIR)) {
@@ -159,6 +160,11 @@ if (!fs.existsSync(AUDIT_PATH)) {
   writeJson(AUDIT_PATH, []);
 }
 
+if (!fs.existsSync(SITE_PATH)) {
+  // 站点设置：登录装饰与首页轮播
+  writeJson(SITE_PATH, { logo: null, admissionBg: null, banners: [] });
+}
+
 if (!fs.existsSync(ADMINS_PATH)) {
   // Default admin list with one admin
   writeJson(ADMINS_PATH, [ { username: 'admin', password: 'admin123' } ]);
@@ -204,13 +210,14 @@ function requireParent(req, res, next) {
 
 function requireAdmin(req, res, next) {
   if (req.session && req.session.admin) return next();
-  return res.redirect('/admin/login');
+  return res.redirect('/login?role=admin');
 }
 
 // Routes - Public
 app.get('/', (req, res) => {
   const announcementsRaw = readJson(ANNOUNCEMENTS_PATH, []);
   const articlesRaw = readJson(ARTICLES_PATH, []);
+  const site = readJson(SITE_PATH, { logo: null, admissionBg: null, banners: [] });
   const announcements = [...announcementsRaw].sort((a, b) => {
     const pinDiff = Number(!!b.pinned) - Number(!!a.pinned);
     if (pinDiff !== 0) return pinDiff;
@@ -220,14 +227,16 @@ app.get('/', (req, res) => {
   res.render('home', {
     parent: req.session.parent || null,
     announcements,
-    articles
+    articles,
+    site
   });
 });
 
 // Unified login page
 app.get('/login', (req, res) => {
   const role = (req.query.role === 'admin') ? 'admin' : 'parent';
-  res.render('login', { role, error: null });
+  const site = readJson(SITE_PATH, { logo: null, admissionBg: null, banners: [] });
+  res.render('login', { role, error: null, site });
 });
 
 // Parent login
@@ -252,7 +261,7 @@ app.post('/logout', (req, res) => {
 app.get('/records', requireParent, (req, res) => {
   const { studentId } = req.session.parent;
   const allRecords = readJson(RECORDS_PATH, {});
-  const records = allRecords[studentId] || { reportCards: [], punishments: [] };
+  const records = allRecords[studentId] || { reportCards: [], punishments: [], images: [], admissions: [] };
   res.render('records', { parent: req.session.parent, records });
 });
 
@@ -260,7 +269,8 @@ app.get('/records', requireParent, (req, res) => {
 
 app.get('/admin/login', (req, res) => {
   if (req.session.admin) return res.redirect('/admin');
-  res.render('admin/login', { error: null });
+  // 统一跳到新登录页（管理员角色）
+  return res.redirect('/login?role=admin');
 });
 
 app.post('/admin/login', (req, res) => {
@@ -280,7 +290,8 @@ app.post('/admin/logout', (req, res) => {
 app.get('/admin', requireAdmin, (req, res) => {
   const announcements = readJson(ANNOUNCEMENTS_PATH, []);
   const articles = readJson(ARTICLES_PATH, []);
-  res.render('admin/dashboard', { admin: req.session.admin, announcements, articles });
+  const site = readJson(SITE_PATH, { logo: null, admissionBg: null, banners: [] });
+  res.render('admin/dashboard', { admin: req.session.admin, announcements, articles, site });
 });
 
 // Admin: list uploaded files (debug/utility)
@@ -348,12 +359,12 @@ app.post('/admin/articles/:id/delete', requireAdmin, (req, res) => {
 });
 
 // Admin: Add student records (report card or punishment)
-app.post('/admin/records/add', requireAdmin, upload.single('imageFile'), (req, res) => {
+app.post('/admin/records/add', requireAdmin, upload.any(), (req, res) => {
   const targetId = normalizeStudentId(req.body.studentId);
   let { type } = req.body;
   const allRecords = readJson(RECORDS_PATH, {});
   if (!allRecords[targetId]) {
-    allRecords[targetId] = { reportCards: [], punishments: [], images: [] };
+    allRecords[targetId] = { reportCards: [], punishments: [], images: [], admissions: [] };
   }
 
   // 服务器兜底：若存在上传文件或填写了图片URL，则强制按图片档案处理
@@ -378,9 +389,8 @@ app.post('/admin/records/add', requireAdmin, upload.single('imageFile'), (req, r
   } else if (type === 'image') {
     const { title, description } = req.body;
     let url = providedImageUrl ? providedImageUrl : null;
-    if (req.file && req.file.filename) {
-      url = `/uploads/${req.file.filename}`;
-    }
+    const f = (req.files || []).find(f => f.fieldname === 'imageFile');
+    if (f && f.filename) url = `/uploads/${f.filename}`;
     if (url) {
       if (!allRecords[targetId].images) allRecords[targetId].images = [];
       allRecords[targetId].images.unshift({
@@ -391,6 +401,14 @@ app.post('/admin/records/add', requireAdmin, upload.single('imageFile'), (req, r
         uploadedAt: Date.now()
       });
       appendAuditLog({ when: Date.now(), user: (req.session.admin && req.session.admin.username) || 'admin', type: 'record.add.image', payload: { studentId: targetId, url } });
+    }
+  } else if (type === 'admission') {
+    let url = (req.body.admissionUrl || '').trim();
+    const f = (req.files || []).find(f => f.fieldname === 'admissionFile');
+    if (f && f.filename) url = `/uploads/${f.filename}`;
+    if (url) {
+      if (!allRecords[targetId].admissions) allRecords[targetId].admissions = [];
+      allRecords[targetId].admissions.unshift({ id: String(Date.now()), title: req.body.admissionTitle || '录取通知书', url, uploadedAt: Date.now() });
     }
   }
 
@@ -418,7 +436,7 @@ app.get('/admin/students/:id', requireAdmin, (req, res) => {
   res.render('admin/student', { student: user, records });
 });
 
-app.post('/admin/students/create', requireAdmin, upload.single('initImageFile'), (req, res) => {
+app.post('/admin/students/create', requireAdmin, upload.any(), (req, res) => {
   const { password, name } = req.body;
   const users = readJson(USERS_PATH, []);
   const canonical = generateNextStudentId();
@@ -426,20 +444,71 @@ app.post('/admin/students/create', requireAdmin, upload.single('initImageFile'),
   writeJson(USERS_PATH, users);
 
   const allRecords = readJson(RECORDS_PATH, {});
-  if (!allRecords[canonical]) allRecords[canonical] = { reportCards: [], punishments: [], images: [] };
+  if (!allRecords[canonical]) allRecords[canonical] = { reportCards: [], punishments: [], images: [], admissions: [] };
 
-  const providedImageUrl = (req.body.initImageUrl || '').trim();
-  if (req.body.initType === 'reportCard') {
-    const { term, chinese, math, english, physics, chemistry } = req.body;
-    allRecords[canonical].reportCards.unshift({ term, chinese: Number(chinese||0), math: Number(math||0), english: Number(english||0), physics: Number(physics||0), chemistry: Number(chemistry||0) });
-  } else if (req.body.initType === 'punishment') {
-    const { date, ptype, reason } = req.body;
-    allRecords[canonical].punishments.unshift({ date, type: ptype, reason });
-  } else if (req.body.initType === 'image') {
-    let url = providedImageUrl || null;
-    if (req.file && req.file.filename) url = `/uploads/${req.file.filename}`;
-    if (url) allRecords[canonical].images.unshift({ id: String(Date.now()), title: req.body.initTitle || '图片档案', description: req.body.initDesc || '', url, uploadedAt: Date.now() });
+  // 兼容老表单：若存在 initType 等单项字段，则按旧逻辑追加一条
+  if (typeof req.body.initType !== 'undefined') {
+    const providedImageUrl = (req.body.initImageUrl || '').trim();
+    if (req.body.initType === 'reportCard') {
+      const { term, chinese, math, english, physics, chemistry } = req.body;
+      allRecords[canonical].reportCards.unshift({ term, chinese: Number(chinese||0), math: Number(math||0), english: Number(english||0), physics: Number(physics||0), chemistry: Number(chemistry||0) });
+    } else if (req.body.initType === 'punishment') {
+      const { date, ptype, reason } = req.body;
+      allRecords[canonical].punishments.unshift({ date, type: ptype, reason });
+    } else if (req.body.initType === 'image') {
+      let url = providedImageUrl || null;
+      const f = (req.files || []).find(f => f.fieldname === 'initImageFile');
+      if (f && f.filename) url = `/uploads/${f.filename}`;
+      if (url) allRecords[canonical].images.unshift({ id: String(Date.now()), title: req.body.initTitle || '图片档案', description: req.body.initDesc || '', url, uploadedAt: Date.now() });
+    }
   }
+
+  // 新表单：records[n][type]=image|reportCard|punishment
+  const records = req.body.records || [];
+  // 将单对象情况规范为数组
+  const normalizedRecords = Array.isArray(records) ? records : Object.keys(records).length ? Object.values(records) : [];
+
+  for (let idx = 0; idx < normalizedRecords.length; idx++) {
+    const rec = normalizedRecords[idx] || {};
+    const type = rec.type;
+    if (type === 'reportCard') {
+      const term = rec.term || '';
+      const chinese = Number(rec.chinese || 0);
+      const math = Number(rec.math || 0);
+      const english = Number(rec.english || 0);
+      const physics = Number(rec.physics || 0);
+      const chemistry = Number(rec.chemistry || 0);
+      allRecords[canonical].reportCards.unshift({ term, chinese, math, english, physics, chemistry });
+    } else if (type === 'punishment') {
+      const date = rec.date || '';
+      const ptype = rec.ptype || '';
+      const reason = rec.reason || '';
+      allRecords[canonical].punishments.unshift({ date, type: ptype, reason });
+    } else if (type === 'image') {
+      const title = rec.title || '图片档案';
+      const description = rec.description || '';
+      let url = (rec.imageUrl || '').trim() || null;
+      // 匹配对应的文件字段名：records[<idx>][imageFile]
+      const fieldName = `records[${idx}][imageFile]`;
+      const f = (req.files || []).find(f => f.fieldname === fieldName);
+      if (f && f.filename) url = `/uploads/${f.filename}`;
+      if (url) {
+        allRecords[canonical].images.unshift({ id: String(Date.now()), title, description, url, uploadedAt: Date.now() });
+      }
+    }
+  }
+
+  // 录取通知书（可选）
+  {
+    let url = (req.body.admissionUrl || '').trim();
+    const f = (req.files || []).find(f => f.fieldname === 'admissionFile');
+    if (f && f.filename) url = `/uploads/${f.filename}`;
+    if (url) {
+      if (!allRecords[canonical].admissions) allRecords[canonical].admissions = [];
+      allRecords[canonical].admissions.unshift({ id: String(Date.now()), title: (req.body.admissionTitle || '录取通知书'), url, uploadedAt: Date.now() });
+    }
+  }
+
   writeJson(RECORDS_PATH, allRecords);
 
   appendAuditLog({ when: Date.now(), user: (req.session.admin && req.session.admin.username) || 'admin', type: 'student.create', payload: { studentId: canonical, name } });

@@ -25,50 +25,18 @@
       <label>家长名称</label>
       <input name="name" />
 
-      <label>初始化档案类型</label>
-      <select name="initType" id="initType">
-        <option value="">无</option>
-        <option value="reportCard">成绩单</option>
-        <option value="punishment">处分单</option>
-        <option value="image">图片</option>
-      </select>
+      <label>初始化档案</label>
+      <div id="recordsContainer" style="display:grid; gap:12px"></div>
+      <button type="button" id="addRecordBtn">+ 添加档案</button>
 
-      <fieldset id="initReport" style="display:none">
-        <legend>成绩单字段</legend>
-        <label>学期</label>
-        <input name="term" />
-        <label>语文</label>
-        <input name="chinese" type="number" />
-        <label>数学</label>
-        <input name="math" type="number" />
-        <label>英语</label>
-        <input name="english" type="number" />
-        <label>物理</label>
-        <input name="physics" type="number" />
-        <label>化学</label>
-        <input name="chemistry" type="number" />
-      </fieldset>
-
-      <fieldset id="initPunish" style="display:none">
-        <legend>处分字段</legend>
-        <label>日期</label>
-        <input name="date" type="date" />
-        <label>类型</label>
-        <input name="ptype" />
-        <label>原因</label>
-        <input name="reason" />
-      </fieldset>
-
-      <fieldset id="initImage" style="display:none">
-        <legend>图片档案</legend>
+      <fieldset style="margin-top:12px">
+        <legend>录取通知书（可选）</legend>
         <label>标题</label>
-        <input name="initTitle" />
-        <label>描述</label>
-        <input name="initDesc" />
-        <label>图片URL（可选）</label>
-        <input name="initImageUrl" placeholder="https://..." />
-        <label>或上传图片文件（可选）</label>
-        <input type="file" name="initImageFile" accept="image/*" />
+        <input name="admissionTitle" placeholder="录取通知书" />
+        <label>文件URL（可选）</label>
+        <input name="admissionUrl" placeholder="https://..." />
+        <label>或上传文件（图片）</label>
+        <input type="file" name="admissionFile" accept="image/*" />
       </fieldset>
 
       <button type="submit">创建学生</button>
@@ -76,18 +44,92 @@
 
     <script>
       (function(){
-        const sel = document.getElementById('initType');
-        const r = document.getElementById('initReport');
-        const p = document.getElementById('initPunish');
-        const i = document.getElementById('initImage');
-        function update(){
-          const v = sel.value;
-          r.style.display = v==='reportCard' ? 'block' : 'none';
-          p.style.display = v==='punishment' ? 'block' : 'none';
-          i.style.display = v==='image' ? 'block' : 'none';
+        const container = document.getElementById('recordsContainer');
+        const addBtn = document.getElementById('addRecordBtn');
+        let counter = 0;
+
+        function createRecordBlock(index){
+          const wrap = document.createElement('fieldset');
+          wrap.style.border = '1px solid #ddd';
+          wrap.style.padding = '8px';
+          wrap.dataset.index = String(index);
+          wrap.innerHTML = `
+            <legend>初始化档案 #${index+1}</legend>
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+              <label>档案类型</label>
+              <select name="records[${index}][type]" class="record-type">
+                <option value="image" selected>图片</option>
+                <option value="reportCard">成绩单</option>
+                <option value="punishment">处分单</option>
+              </select>
+              <button type="button" class="remove-record" title="移除此档案" aria-label="移除此档案">移除</button>
+            </div>
+
+            <div class="record-fields record-image">
+              <label>标题</label>
+              <input name="records[${index}][title]" />
+              <label>描述</label>
+              <input name="records[${index}][description]" />
+              <label>图片URL（可选）</label>
+              <input name="records[${index}][imageUrl]" placeholder="https://..." />
+              <label>或上传图片文件（可选）</label>
+              <input type="file" name="records[${index}][imageFile]" accept="image/*" />
+            </div>
+
+            <div class="record-fields record-reportCard" style="display:none">
+              <label>学期</label>
+              <input name="records[${index}][term]" />
+              <label>语文</label>
+              <input name="records[${index}][chinese]" type="number" />
+              <label>数学</label>
+              <input name="records[${index}][math]" type="number" />
+              <label>英语</label>
+              <input name="records[${index}][english]" type="number" />
+              <label>物理</label>
+              <input name="records[${index}][physics]" type="number" />
+              <label>化学</label>
+              <input name="records[${index}][chemistry]" type="number" />
+            </div>
+
+            <div class="record-fields record-punishment" style="display:none">
+              <label>日期</label>
+              <input name="records[${index}][date]" type="date" />
+              <label>类型</label>
+              <input name="records[${index}][ptype]" />
+              <label>原因</label>
+              <input name="records[${index}][reason]" />
+            </div>
+          `;
+
+          const typeSel = wrap.querySelector('.record-type');
+          const imgBox = wrap.querySelector('.record-image');
+          const repBox = wrap.querySelector('.record-reportCard');
+          const punBox = wrap.querySelector('.record-punishment');
+          function sync(){
+            const v = typeSel.value;
+            imgBox.style.display = (v === 'image') ? 'block' : 'none';
+            repBox.style.display = (v === 'reportCard') ? 'block' : 'none';
+            punBox.style.display = (v === 'punishment') ? 'block' : 'none';
+          }
+          typeSel.addEventListener('change', sync);
+          sync();
+
+          const rm = wrap.querySelector('.remove-record');
+          rm.addEventListener('click', function(){
+            container.removeChild(wrap);
+          });
+
+          return wrap;
         }
-        sel.addEventListener('change', update);
-        update();
+
+        function addRecord(){
+          const block = createRecordBlock(counter++);
+          container.appendChild(block);
+        }
+
+        addBtn.addEventListener('click', addRecord);
+        // 页面默认添加一块图片档案
+        addRecord();
       })();
     </script>
   </div>

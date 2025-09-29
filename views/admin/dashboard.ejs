@@ -89,7 +89,37 @@
     </div>
 
     <div class="card" style="margin-top:16px">
-      <h2>档案管理（成绩单/处分单/图片）</h2>
+      <h2>站点设置 - 轮播图管理</h2>
+      <form method="post" action="/admin/site/banners" enctype="multipart/form-data" style="margin-bottom:8px">
+        <label>上传轮播图</label>
+        <input type="file" name="banner" accept="image/*" />
+        <button type="submit">添加到轮播</button>
+      </form>
+      <% const banners = (site && site.banners) || []; %>
+      <% if (banners.length) { %>
+        <table>
+          <thead><tr><th>#</th><th>预览</th><th>操作</th></tr></thead>
+          <tbody>
+            <% banners.forEach((b, i) => { %>
+              <tr>
+                <td><%= i+1 %></td>
+                <td><img src="<%= b %>" alt="banner" style="max-width:240px" /></td>
+                <td>
+                  <form method="post" action="/admin/site/banners/<%= i %>/delete" style="display:inline">
+                    <button type="submit">删除</button>
+                  </form>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      <% } else { %>
+        <p>暂无轮播图</p>
+      <% } %>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h2>档案管理（成绩单/处分单/图片/录取通知书）</h2>
       <form method="post" action="/admin/records/add" enctype="multipart/form-data">
         <label>学号</label>
         <input name="studentId" required />
@@ -98,6 +128,7 @@
           <option value="reportCard">成绩单</option>
           <option value="punishment">处分单</option>
           <option value="image">图片档案</option>
+          <option value="admission">录取通知书</option>
         </select>
 
         <fieldset id="fieldset-report" style="border:1px solid #ddd;padding:8px">
@@ -138,6 +169,16 @@
           <input type="file" name="imageFile" accept="image/*" />
         </fieldset>
 
+        <fieldset id="fieldset-admission" style="border:1px solid #ddd;padding:8px;margin-top:8px; display:none">
+          <legend>录取通知书</legend>
+          <label>标题（可选）</label>
+          <input name="admissionTitle" />
+          <label>文件URL（可选）</label>
+          <input name="admissionUrl" placeholder="https://..." />
+          <label>或上传文件（图片/PDF）</label>
+          <input type="file" name="admissionFile" accept="image/*,application/pdf" />
+        </fieldset>
+
         <button type="submit" style="margin-top:8px">添加档案</button>
       </form>
       <script>
@@ -146,11 +187,13 @@
           const fr = document.getElementById('fieldset-report');
           const fp = document.getElementById('fieldset-punish');
           const fi = document.getElementById('fieldset-image');
+          const fa = document.getElementById('fieldset-admission');
           const update = () => {
             const v = sel.value;
             fr.style.display = v === 'reportCard' ? 'block' : 'none';
             fp.style.display = v === 'punishment' ? 'block' : 'none';
             fi.style.display = v === 'image' ? 'block' : 'none';
+            fa.style.display = v === 'admission' ? 'block' : 'none';
           };
           sel.addEventListener('change', update);
           // 默认显示图片档案，降低误选概率
