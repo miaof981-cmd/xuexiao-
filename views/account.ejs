@@ -33,9 +33,9 @@
       <form method="post" action="/account" style="display:grid; gap:10px">
         <input type="hidden" name="action" value="updatePassword" />
         <label>原密码</label>
-        <input name="currentPassword" type="password" value="<%= (typeof form && form.currentPassword) ? form.currentPassword : '' %>" style="padding:12px; font-size:16px" />
+        <input name="currentPassword" type="password" value="<%= (typeof form !== 'undefined' && form.currentPassword) ? form.currentPassword : '' %>" style="padding:12px; font-size:16px" />
         <label>新密码</label>
-        <input name="newPassword" type="password" value="<%= (typeof form && form.newPassword) ? form.newPassword : '' %>" style="padding:12px; font-size:16px" />
+        <input name="newPassword" type="password" value="<%= (typeof form !== 'undefined' && form.newPassword) ? form.newPassword : '' %>" style="padding:12px; font-size:16px" />
         <label>确认新密码</label>
         <input name="confirmPassword" type="password" value="" placeholder="请再次输入新密码" style="padding:12px; font-size:16px" />
         <button type="submit">保存密码</button>

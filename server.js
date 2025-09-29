@@ -270,7 +270,7 @@ app.post('/logout', (req, res) => {
 app.get('/account', requireParent, (req, res) => {
   const users = readJson(USERS_PATH, []);
   const user = users.find(u => u.studentId === req.session.parent.studentId) || { studentId: req.session.parent.studentId, name: '' };
-  res.render('account', { parent: req.session.parent, user, error: null, success: null });
+  res.render('account', { parent: req.session.parent, user, error: null, success: null, form: {} });
 });
 
 app.post('/account', requireParent, (req, res) => {
