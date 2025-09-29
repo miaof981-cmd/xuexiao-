@@ -274,31 +274,43 @@ app.get('/account', requireParent, (req, res) => {
 });
 
 app.post('/account', requireParent, (req, res) => {
-  const { currentPassword, newPassword, confirmPassword, name } = req.body;
+  const { action } = req.body;
   const users = readJson(USERS_PATH, []);
   const idx = users.findIndex(u => u.studentId === req.session.parent.studentId);
   if (idx === -1) {
-    return res.status(400).render('account', { parent: req.session.parent, user: { studentId: req.session.parent.studentId, name: name || '' }, error: '账户不存在', success: null });
+    return res.status(400).render('account', { parent: req.session.parent, user: { studentId: req.session.parent.studentId, name: '' }, error: '账户不存在', success: null });
   }
   const user = users[idx];
-  if (newPassword || confirmPassword || currentPassword) {
+
+  if (action === 'updateName') {
+    const name = String(req.body.name || '').trim();
+    user.name = name;
+    req.session.parent.name = name;
+    users[idx] = user;
+    writeJson(USERS_PATH, users);
+    appendAuditLog({ when: Date.now(), user: req.session.parent.studentId, type: 'parent.name.update', payload: { name } });
+    return res.render('account', { parent: req.session.parent, user, error: null, success: '已保存' });
+  }
+
+  if (action === 'updatePassword') {
+    const currentPassword = req.body.currentPassword || '';
+    const newPassword = req.body.newPassword || '';
+    const confirmPassword = req.body.confirmPassword || '';
+    const form = { currentPassword, newPassword }; // 回填，确认密码留空
     if (!currentPassword || user.password !== currentPassword) {
-      return res.status(400).render('account', { parent: req.session.parent, user, error: '原密码不正确', success: null });
+      return res.status(400).render('account', { parent: req.session.parent, user, error: '原密码不正确', success: null, form });
     }
     if (!newPassword || newPassword !== confirmPassword) {
-      return res.status(400).render('account', { parent: req.session.parent, user, error: '两次新密码不一致', success: null });
+      return res.status(400).render('account', { parent: req.session.parent, user, error: '两次新密码不一致', success: null, form });
     }
     user.password = newPassword;
+    users[idx] = user;
+    writeJson(USERS_PATH, users);
+    appendAuditLog({ when: Date.now(), user: req.session.parent.studentId, type: 'parent.password.update', payload: {} });
+    return res.render('account', { parent: req.session.parent, user, error: null, success: '已保存' });
   }
-  if (typeof name !== 'undefined') {
-    user.name = String(name || '').trim();
-    // 更新会话中的展示名
-    req.session.parent.name = user.name;
-  }
-  users[idx] = user;
-  writeJson(USERS_PATH, users);
-  appendAuditLog({ when: Date.now(), user: req.session.parent.studentId, type: 'parent.account.update', payload: { nameUpdated: true, passwordUpdated: Boolean(newPassword) } });
-  res.render('account', { parent: req.session.parent, user, error: null, success: '已保存' });
+
+  return res.status(400).render('account', { parent: req.session.parent, user, error: '未知操作', success: null });
 });
 
 // Student records (parent only)
