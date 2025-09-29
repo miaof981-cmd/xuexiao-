@@ -210,7 +210,7 @@ function requireParent(req, res, next) {
 
 function requireAdmin(req, res, next) {
   if (req.session && req.session.admin) return next();
-  return res.redirect('/admin/login');
+  return res.redirect('/login?role=admin');
 }
 
 // Routes - Public
@@ -269,7 +269,8 @@ app.get('/records', requireParent, (req, res) => {
 
 app.get('/admin/login', (req, res) => {
   if (req.session.admin) return res.redirect('/admin');
-  res.render('admin/login', { error: null });
+  // 统一跳到新登录页（管理员角色）
+  return res.redirect('/login?role=admin');
 });
 
 app.post('/admin/login', (req, res) => {
