@@ -5,7 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>学生档案</title>
   <link rel="stylesheet" href="/styles.css" />
-  <style></style>
+  <style>
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 50; }
+    .modal { background:#fff; border-radius: 12px; max-width: 90vw; max-height: 90vh; padding: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+    .modal img { max-width: 86vw; max-height: 80vh; display:block; border-radius: 8px; }
+    .modal-close { margin-top:8px; display:inline-block; }
+  </style>
 </head>
 <body>
   <div class="container">
@@ -16,7 +21,34 @@
       <form method="post" action="/logout" style="display:inline-block"><button type="submit">退出</button></form>
     </div>
 
+    <% var hasAdmission = records.admissions && records.admissions.length; %>
+    <% if (hasAdmission) { var firstAd = records.admissions[0]; } %>
+    <div id="admissionModal" class="modal-backdrop" style="display:<%= hasAdmission ? 'flex' : 'none' %>">
+      <div class="modal">
+        <h3 style="margin:0 0 8px">录取通知书</h3>
+        <% if (hasAdmission) { %>
+          <img src="<%= firstAd.url %>" alt="录取通知书" />
+        <% } %>
+        <button type="button" class="modal-close" onclick="document.getElementById('admissionModal').style.display='none'">关闭</button>
+      </div>
+    </div>
+
     <div class="masonry">
+      <% if (records.admissions && records.admissions.length) { %>
+        <% records.admissions.forEach(ad => { %>
+          <div class="masonry-item">
+            <div class="doc-card">
+              <div class="doc-header">
+                <div class="doc-title">录取通知书</div>
+                <div class="doc-meta"><%= new Date(ad.uploadedAt).toLocaleDateString('zh-CN') %></div>
+              </div>
+              <div class="doc-body">
+                <img src="<%= ad.url %>" alt="admission" style="width:100%; height:auto; border-radius:8px;" />
+              </div>
+            </div>
+          </div>
+        <% }) %>
+      <% } %>
       <% if (records.reportCards && records.reportCards.length) { %>
         <% records.reportCards.forEach(rc => { %>
           <div class="masonry-item">
@@ -77,21 +109,6 @@
         <% }) %>
       <% } %>
 
-      <% if (records.admissions && records.admissions.length) { %>
-        <% records.admissions.forEach(ad => { %>
-          <div class="masonry-item">
-            <div class="doc-card">
-              <div class="doc-header">
-                <div class="doc-title">录取通知书</div>
-                <div class="doc-meta"><%= new Date(ad.uploadedAt).toLocaleDateString('zh-CN') %></div>
-              </div>
-              <div class="doc-body">
-                <img src="<%= ad.url %>" alt="admission" style="width:100%; height:auto; border-radius:8px;" />
-              </div>
-            </div>
-          </div>
-        <% }) %>
-      <% } %>
 
       <% if ((!records.reportCards || !records.reportCards.length) && (!records.punishments || !records.punishments.length) && (!records.images || !records.images.length) && (!records.admissions || !records.admissions.length)) { %>
         <div class="masonry-item">

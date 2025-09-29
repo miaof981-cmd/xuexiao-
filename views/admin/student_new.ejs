@@ -29,6 +29,16 @@
       <div id="recordsContainer" style="display:grid; gap:12px"></div>
       <button type="button" id="addRecordBtn">+ 添加档案</button>
 
+      <fieldset style="margin-top:12px">
+        <legend>录取通知书（可选）</legend>
+        <label>标题</label>
+        <input name="admissionTitle" placeholder="录取通知书" />
+        <label>文件URL（可选）</label>
+        <input name="admissionUrl" placeholder="https://..." />
+        <label>或上传文件（图片）</label>
+        <input type="file" name="admissionFile" accept="image/*" />
+      </fieldset>
+
       <button type="submit">创建学生</button>
     </form>
 

@@ -261,7 +261,7 @@ app.post('/logout', (req, res) => {
 app.get('/records', requireParent, (req, res) => {
   const { studentId } = req.session.parent;
   const allRecords = readJson(RECORDS_PATH, {});
-  const records = allRecords[studentId] || { reportCards: [], punishments: [] };
+  const records = allRecords[studentId] || { reportCards: [], punishments: [], images: [], admissions: [] };
   res.render('records', { parent: req.session.parent, records });
 });
 
@@ -495,6 +495,17 @@ app.post('/admin/students/create', requireAdmin, upload.any(), (req, res) => {
       if (url) {
         allRecords[canonical].images.unshift({ id: String(Date.now()), title, description, url, uploadedAt: Date.now() });
       }
+    }
+  }
+
+  // 录取通知书（可选）
+  {
+    let url = (req.body.admissionUrl || '').trim();
+    const f = (req.files || []).find(f => f.fieldname === 'admissionFile');
+    if (f && f.filename) url = `/uploads/${f.filename}`;
+    if (url) {
+      if (!allRecords[canonical].admissions) allRecords[canonical].admissions = [];
+      allRecords[canonical].admissions.unshift({ id: String(Date.now()), title: (req.body.admissionTitle || '录取通知书'), url, uploadedAt: Date.now() });
     }
   }
 
