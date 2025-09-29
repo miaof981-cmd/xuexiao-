@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>账户设置</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>账户设置</h1>
+    <p>学号：<%= parent.studentId %></p>
+    <div class="toolbar">
+      <a href="/records"><button>返回档案</button></a>
+      <form method="post" action="/logout" style="display:inline-block"><button type="submit">退出</button></form>
+    </div>
+
+    <% if (error) { %>
+      <p style="color:#b91c1c"><%= error %></p>
+    <% } %>
+    <% if (success) { %>
+      <p style="color:#15803d"><%= success %></p>
+    <% } %>
+
+    <form method="post" action="/account" style="display:grid; gap:8px; max-width:420px">
+      <label>家长名称</label>
+      <input name="name" value="<%= user.name || '' %>" />
+
+      <label>原密码</label>
+      <input name="currentPassword" type="password" />
+      <label>新密码</label>
+      <input name="newPassword" type="password" />
+      <label>确认新密码</label>
+      <input name="confirmPassword" type="password" />
+
+      <button type="submit">保存</button>
+    </form>
+  </div>
+</body>
+</html>
+
+

@@ -56,14 +56,22 @@ function appendAuditLog(entry) {
   }
 }
 
-// Generate next studentId sequentially, preserving width
+// Generate next studentId sequentially with configurable prefix
 function generateNextStudentId() {
   const users = readJson(USERS_PATH, []);
-  if (!users.length) return '20230001';
-  const maxLen = Math.max(...users.map(u => String(u.studentId).length));
-  const maxNum = users.reduce((m, u) => Math.max(m, Number(u.studentId) || 0), 0);
+  const site = readJson(SITE_PATH, { logo: null, admissionBg: null, banners: [], idPrefix: '2025' });
+  const prefix = String(site.idPrefix || '2025');
+  const existingWithPrefix = users
+    .map(u => String(u.studentId))
+    .filter(id => id.startsWith(prefix));
+  if (!existingWithPrefix.length) {
+    // first id for this prefix
+    return `${prefix}0001`;
+  }
+  const maxNum = existingWithPrefix.reduce((m, id) => Math.max(m, Number(id.slice(prefix.length)) || 0), 0);
   const nextNum = maxNum + 1;
-  return String(nextNum).padStart(maxLen, '0');
+  const suffix = String(nextNum).padStart(4, '0');
+  return `${prefix}${suffix}`;
 }
 
 // Normalize a studentId to the canonical one in users.json (handles missing leading zeros)
@@ -162,7 +170,7 @@ if (!fs.existsSync(AUDIT_PATH)) {
 
 if (!fs.existsSync(SITE_PATH)) {
   // 站点设置：登录装饰与首页轮播
-  writeJson(SITE_PATH, { logo: null, admissionBg: null, banners: [] });
+  writeJson(SITE_PATH, { logo: null, admissionBg: null, banners: [], idPrefix: '2025' });
 }
 
 if (!fs.existsSync(ADMINS_PATH)) {
@@ -257,6 +265,41 @@ app.post('/logout', (req, res) => {
   });
 });
 
+// Parent account settings
+app.get('/account', requireParent, (req, res) => {
+  const users = readJson(USERS_PATH, []);
+  const user = users.find(u => u.studentId === req.session.parent.studentId) || { studentId: req.session.parent.studentId, name: '' };
+  res.render('account', { parent: req.session.parent, user, error: null, success: null });
+});
+
+app.post('/account', requireParent, (req, res) => {
+  const { currentPassword, newPassword, confirmPassword, name } = req.body;
+  const users = readJson(USERS_PATH, []);
+  const idx = users.findIndex(u => u.studentId === req.session.parent.studentId);
+  if (idx === -1) {
+    return res.status(400).render('account', { parent: req.session.parent, user: { studentId: req.session.parent.studentId, name: name || '' }, error: '账户不存在', success: null });
+  }
+  const user = users[idx];
+  if (newPassword || confirmPassword || currentPassword) {
+    if (!currentPassword || user.password !== currentPassword) {
+      return res.status(400).render('account', { parent: req.session.parent, user, error: '原密码不正确', success: null });
+    }
+    if (!newPassword || newPassword !== confirmPassword) {
+      return res.status(400).render('account', { parent: req.session.parent, user, error: '两次新密码不一致', success: null });
+    }
+    user.password = newPassword;
+  }
+  if (typeof name !== 'undefined') {
+    user.name = String(name || '').trim();
+    // 更新会话中的展示名
+    req.session.parent.name = user.name;
+  }
+  users[idx] = user;
+  writeJson(USERS_PATH, users);
+  appendAuditLog({ when: Date.now(), user: req.session.parent.studentId, type: 'parent.account.update', payload: { nameUpdated: true, passwordUpdated: Boolean(newPassword) } });
+  res.render('account', { parent: req.session.parent, user, error: null, success: '已保存' });
+});
+
 // Student records (parent only)
 app.get('/records', requireParent, (req, res) => {
   const { studentId } = req.session.parent;
@@ -292,6 +335,16 @@ app.get('/admin', requireAdmin, (req, res) => {
   const articles = readJson(ARTICLES_PATH, []);
   const site = readJson(SITE_PATH, { logo: null, admissionBg: null, banners: [] });
   res.render('admin/dashboard', { admin: req.session.admin, announcements, articles, site });
+});
+
+// Admin: update student ID prefix
+app.post('/admin/site/id-prefix', requireAdmin, (req, res) => {
+  const { idPrefix } = req.body;
+  const site = readJson(SITE_PATH, { logo: null, admissionBg: null, banners: [], idPrefix: '2025' });
+  site.idPrefix = String(idPrefix || '2025').replace(/[^0-9]/g, '').slice(0, 8) || '2025';
+  writeJson(SITE_PATH, site);
+  appendAuditLog({ when: Date.now(), user: (req.session.admin && req.session.admin.username) || 'admin', type: 'site.idPrefix.update', payload: { idPrefix: site.idPrefix } });
+  res.redirect('/admin');
 });
 
 // Admin: list uploaded files (debug/utility)

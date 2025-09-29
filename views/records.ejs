@@ -18,7 +18,8 @@
     <p>家长：<%= parent.name %>（学号：<%= parent.studentId %>）</p>
     <div class="toolbar">
       <a href="/"><button>返回首页</button></a>
-      <form method="post" action="/logout" style="display:inline-block"><button type="submit">退出</button></form>
+      <a href="/account" style="margin-left:8px"><button>账户设置</button></a>
+      <form method="post" action="/logout" style="display:inline-block; margin-left:8px"><button type="submit">退出</button></form>
     </div>
 
     <% var hasAdmission = records.admissions && records.admissions.length; %>
