@@ -253,7 +253,8 @@ app.post('/login', (req, res) => {
   const users = readJson(USERS_PATH, []);
   const user = users.find((u) => u.studentId === studentId && u.password === password);
   if (!user) {
-    return res.status(401).render('login', { role: 'parent', error: '学号或密码错误' });
+    const site = readJson(SITE_PATH, { logo: null, admissionBg: null, banners: [] });
+    return res.status(401).render('login', { role: 'parent', error: '学号或密码错误', site });
   }
   req.session.parent = { studentId: user.studentId, name: user.name };
   res.redirect('/records');
@@ -321,7 +322,8 @@ app.post('/admin/login', (req, res) => {
   const admins = readJson(ADMINS_PATH, []);
   const ok = admins.find(a => a.username === username && a.password === password);
   if (ok) { req.session.admin = { username }; return res.redirect('/admin'); }
-  res.status(401).render('admin/login', { error: '用户名或密码错误' });
+  const site = readJson(SITE_PATH, { logo: null, admissionBg: null, banners: [] });
+  res.status(401).render('login', { role: 'admin', error: '用户名或密码错误', site });
 });
 
 // 注意：管理员新建仅允许在登录后的后台内进行（出于安全考虑），公共入口已移除。
