@@ -77,7 +77,23 @@
         <% }) %>
       <% } %>
 
-      <% if ((!records.reportCards || !records.reportCards.length) && (!records.punishments || !records.punishments.length) && (!records.images || !records.images.length)) { %>
+      <% if (records.admissions && records.admissions.length) { %>
+        <% records.admissions.forEach(ad => { %>
+          <div class="masonry-item">
+            <div class="doc-card">
+              <div class="doc-header">
+                <div class="doc-title">录取通知书</div>
+                <div class="doc-meta"><%= new Date(ad.uploadedAt).toLocaleDateString('zh-CN') %></div>
+              </div>
+              <div class="doc-body">
+                <img src="<%= ad.url %>" alt="admission" style="width:100%; height:auto; border-radius:8px;" />
+              </div>
+            </div>
+          </div>
+        <% }) %>
+      <% } %>
+
+      <% if ((!records.reportCards || !records.reportCards.length) && (!records.punishments || !records.punishments.length) && (!records.images || !records.images.length) && (!records.admissions || !records.admissions.length)) { %>
         <div class="masonry-item">
           <div class="doc-card">
             <div class="doc-body">
